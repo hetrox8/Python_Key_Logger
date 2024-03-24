@@ -13,7 +13,7 @@ import win32process
 import zipfile
 import pyscreenshot as ImageGrab
 import logging
-from aes_key_generator import aes_key
+#from aes_key_generator import aes_key
 
 # Key for AES encryption (must be 16, 24, or 32 bytes long)
 AES_KEY = aes_key()
