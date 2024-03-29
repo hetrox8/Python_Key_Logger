@@ -1,8 +1,8 @@
-# Keylogger Project 🔐
+# Keylogger Project 🔒💻
 
 ## Overview 📝
 
-This project contains a keylogger script written in Python. The keylogger is designed to capture keystrokes on a target machine and perform various actions such as logging keystrokes to a local file, capturing window titles, taking screenshots, and optionally sending logs to a remote server.
+Welcome to the Keylogger Project, where we dive into the realm of digital surveillance and security. Have you ever wondered how keystrokes are captured in movies or the dramatic scenes where hackers infiltrate systems? This project brings that cinematic experience to life with a real-world keylogger script written in Python.
 
 ## Features 🚀
 
